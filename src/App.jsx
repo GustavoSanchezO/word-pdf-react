@@ -69,20 +69,31 @@ export default function App() {
     setText("");
 
     const ext = selected.name.split(".").pop()?.toLowerCase();
-    if (ext !== "docx") {
+    const validExtensions = ["txt", "docx"];
+    
+    if (!validExtensions.includes(ext)) {
+      console.error("no es un archivo valido");
       setStatus("error");
-      setError("Por ahora esta versión lee archivos .docx. Los .doc antiguos suelen requerir conversión previa.");
+      setError("Solo se aceptan archivos .txt o .docx");
+      console.info("Solo se aceptan archivos .txt o .docs")
       return;
     }
 
     try {
       const arrayBuffer = await selected.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      const extracted = result.value || "";
+      let extracted = "";
+
+      if (ext === "docx") {
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        extracted = result.value || "";
+      } else if (ext === "txt") {
+        const decoder = new TextDecoder();
+        extracted = decoder.decode(arrayBuffer);
+      }
 
       if (!extracted.trim()) {
         setStatus("error");
-        setError("No se pudo extraer texto del archivo. Prueba con otro documento .docx.");
+        setError("No se pudo extraer texto del archivo. Verifica que sea válido.");
         return;
       }
 
@@ -90,7 +101,7 @@ export default function App() {
       setStatus("ready");
     } catch (err) {
       setStatus("error");
-      setError("Ocurrió un problema al leer el archivo. Verifica que sea un .docx válido.");
+      setError("Ocurrió un problema al leer el archivo. Verifica que sea válido.");
     }
   };
 
@@ -119,6 +130,7 @@ export default function App() {
 
       doc.setFontSize(FONT_SIZE);
       doc.setFont("helvetica", "normal");
+      console.log("Convertido correctamente")
 
       for (const line of lines) {
         if (y > bottomLimit) {
@@ -142,6 +154,7 @@ export default function App() {
     } catch (err) {
       setStatus("error");
       setError("No se pudo generar el PDF. Intenta nuevamente.");
+      console.err("No se pudo generar el pdf", err)
     }
   };
 
